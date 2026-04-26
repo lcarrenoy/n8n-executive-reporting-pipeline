@@ -1,0 +1,42 @@
+version: "3.9"
+
+services:
+
+  reporting-api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+      - SLACK_CHANNEL=${SLACK_CHANNEL}
+      - GMAIL_USER=${GMAIL_USER}
+      - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD}
+      - EMAIL_RECIPIENTS=${EMAIL_RECIPIENTS}
+    volumes:
+      - ./reports:/app/reports
+    restart: unless-stopped
+
+  n8n:
+    image: n8nio/n8n:latest
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=admin123
+      - REPORTING_API_URL=http://reporting-api:8000
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+      - SLACK_CHANNEL=${SLACK_CHANNEL}
+      - EMAIL_RECIPIENTS=${EMAIL_RECIPIENTS}
+      - COMPANY_ID=${COMPANY_ID}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./workflows:/home/node/.n8n/workflows
+    depends_on:
+      - reporting-api
+    restart: unless-stopped
+
+volumes:
+  n8n_data:
